@@ -1,0 +1,206 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+install.packages("pacman")
+```
+
+```{r}
+library(readr)
+datast <- read_csv("Downloads/MBA786M Group Project and Quiz/dataset.csv")
+
+```
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+rm(list = ls())
+```
+
+```{r}
+library(tree)
+library(ISLR2)
+attach(dataset)
+Class_ind <- factor(ifelse(Class == 'Bad', "No", "Yes"))
+```
+```{r}
+library(pacman)
+library(caret)
+```
+
+```{r}
+dataset <- data.frame(dataset, Class_ind)
+```
+
+
+```{r}
+set.seed(1)
+
+inTrain <- createDataPartition(dataset$Class_ind, p=.7, list = F)
+
+train <- dataset[inTrain,]
+
+valid <- dataset[-inTrain,]
+
+rm(inTrain)
+```
+
+```{r}
+install.packages("sparkline")
+```
+
+
+```{r}
+pacman::p_load(tidyverse, skimr, GGally, plotly, viridis, caret, randomForest, e1071, rpart, xgboost, h2o, corrplot, rpart.plot, corrgram, lightgbm, visNetwork)
+```
+
+```{r}
+library(rpart)
+library(partykit)
+set.seed(1)
+
+rpart_model <- rpart(Class_ind~ .-Class, train)
+#　rpart.plot(rpart_model)
+prp(rpart_model)
+
+```
+
+
+
+
+```{r}
+
+rpart_result <- predict(rpart_model, newdata = valid[,!colnames(valid) %in% c("Class_ind")], type='class')
+
+confusionMatrix(rpart_result, valid$Class_ind)
+
+```
+```{r}
+varImp(rpart_model,scale=FALSE)
+```
+
+
+```{r}
+rm(rpart_model, rpart_result)
+```
+
+
+```{r}
+set.seed(10)
+rpart_model_full <- rpart(Class_ind~ .-Class, dataset)
+prp(rpart_model_full)
+```
+
+```{r}
+rpart_result_full <- predict(rpart_model_full, newdata = dataset[,!colnames(dataset) %in% c("Class_ind")], type='class')
+confusionMatrix(rpart_result_full, dataset$Class_ind)
+```
+
+
+
+```{r}
+varImp(rpart_model_full,scale=FALSE)
+```
+
+
+```{r}
+
+varImpPlot(rpart_model_full,sort=TRUE, n.var=11)
+
+```
+
+
+```{r}
+rm(rpart_model_full, rpart_result_full)
+```
+
+```{r}
+set.seed(10)
+rf_model_full <- randomForest(Class_ind~ . -Class ,dataset)
+rf_result_full <- predict(rf_model_full, newdata = dataset[,!colnames(dataset) %in% c("Class_ind")])
+
+confusionMatrix(rf_result_full, dataset$Class_ind)
+```
+
+
+
+```{r}
+rm(rf_model_full, rf_result_full)
+```
+
+
+
+```{r}
+set.seed(11)
+rf_model <- randomForest(Class_ind~ . -Class ,train,mtry=8,ntrees=250)
+rf_result <- predict(rf_model, newdata = valid[,!colnames(valid) %in% c("Class_ind")])
+confusionMatrix(rf_result, valid$Class_ind)
+```
+
+```{r}
+imp <- as.data.frame(varImp(rf_model))
+imp <- data.frame(overall = imp$Overall,
+           names   = rownames(imp))
+imp[order(imp$overall,decreasing = T),]
+```
+```{r}
+varImpPlot(rf_model,n.var=20,sort=TRUE)
+```
+
+
+```{r}
+rm(rf_model, rf_result,imp)
+```
+
+
+```{r}
+set.seed(5)
+bag_model <- randomForest(Class_ind~ . -Class ,dataset,mtry=61)
+bag_result <- predict(bag_model, newdata = dataset[,!colnames(dataset) %in% c("Class_ind")])
+confusionMatrix(bag_result, dataset$Class_ind)
+
+```
+```{r}
+imp <- as.data.frame(varImp(bg_model))
+imp <- data.frame(overall = imp$Overall,
+           names   = rownames(imp))
+imp[order(imp$overall,decreasing = T),]
+```
+```{r}
+varImpPlot(bg_model,n.var=20,sort=TRUE)
+```
+
+```{r}
+rm(bag_model, bag_result)
+```
+
+
+```{r}
+
+set.seed(24)
+bg_model <- randomForest(Class_ind~ . -Class ,train,mtry=61,ntree=10)
+bg_result <- predict(bg_model, newdata = valid[,!colnames(valid) %in% c("Class_ind")])
+confusionMatrix(bg_result, valid$Class_ind)
+
+```
+```{r}
+varImp(bg_model)
+```
+
+
+```{r}
+varImpPlot(bg_model,sort=TRUE, n.var=11)
+```
+```{r}
+importance(bg_model)
+```
+
+
+```{r}
+rm(bg_model, bg_result)
+```
+
+
